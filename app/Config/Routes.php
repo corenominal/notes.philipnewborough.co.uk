@@ -24,6 +24,8 @@ $routes->get('/admin', 'Admin\Home::index');
 $routes->get('/admin/notes/key', 'Admin\Notes::key');
 $routes->get('/admin/import', 'Admin\Import::index');
 $routes->post('/admin/import', 'Admin\Import::process');
+$routes->get('/admin/export', 'Admin\Export::index');
+$routes->post('/admin/export', 'Admin\Export::process');
 
 // API routes
 $routes->match(['get', 'options'], '/api/test/ping', 'Api\Test::ping');

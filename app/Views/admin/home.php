@@ -122,6 +122,12 @@
                     <a href="/admin/notes/key" class="btn btn-outline-secondary text-start">
                         <i class="bi bi-key-fill me-2"></i> Set Encryption Key
                     </a>
+                    <a href="/admin/export" class="btn btn-outline-secondary text-start">
+                        <i class="bi bi-download me-2"></i> Export Notes
+                    </a>
+                    <a href="/admin/import" class="btn btn-outline-secondary text-start">
+                        <i class="bi bi-upload me-2"></i> Import Notes
+                    </a>
                     <a href="<?= config('Urls')->logs ?>admin?search=<?= urlencode($_SERVER['HTTP_HOST'] ?? 'unknown') ?>" target="_blank" class="btn btn-outline-secondary text-start">
                         <i class="bi bi-journal-text me-2"></i> Event Log
                     </a>
