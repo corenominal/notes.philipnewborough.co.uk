@@ -109,7 +109,12 @@
                         <ul class="nav flex-column mb-3">
                             <li class="nav-item">
                                 <a class="nav-link d-flex align-items-center gap-2 text-white-50 px-3 py-2 active" href="/">
-                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                    <i class="bi bi-journal-text"></i> Notes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center gap-2 text-white-50 px-3 py-2" href="/note/new">
+                                    <i class="bi bi-plus-circle-fill"></i> New Note
                                 </a>
                             </li>
                         </ul>
@@ -122,6 +127,11 @@
                             <li class="nav-item">
                                 <a class="nav-link d-flex align-items-center gap-2 text-white-50 px-3 py-2" href="/admin">
                                     <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center gap-2 text-white-50 px-3 py-2" href="/admin/notes/key">
+                                    <i class="bi bi-key-fill"></i> Notes Key
                                 </a>
                             </li>
                         </ul>

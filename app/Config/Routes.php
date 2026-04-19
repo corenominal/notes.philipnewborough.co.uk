@@ -6,11 +6,22 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 $routes->get('/', 'Home::index');
+$routes->get('/notes', 'Home::list');
+
+// Note routes
+$routes->get('/note/new', 'Note::new');
+$routes->get('/note/(:num)/edit', 'Note::edit/$1');
+$routes->get('/note/(:num)', 'Note::find/$1');
+$routes->get('/note/(:num)/revisions', 'Note::listRevisions/$1');
+$routes->get('/note/(:num)/revision/(:num)', 'Note::findRevision/$1/$2');
+$routes->post('/note', 'Note::create');
+$routes->post('/note/preview', 'Note::preview');
+$routes->patch('/note/(:num)', 'Note::update/$1');
+$routes->delete('/note/(:num)', 'Note::delete/$1');
 
 // Admin routes
 $routes->get('/admin', 'Admin\Home::index');
-$routes->get('/admin/datatable', 'Admin\Home::datatable');
-$routes->post('/admin/delete', 'Admin\Home::delete');
+$routes->get('/admin/notes/key', 'Admin\Notes::key');
 
 // API routes
 $routes->match(['get', 'options'], '/api/test/ping', 'Api\Test::ping');
