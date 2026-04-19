@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 pinBtn.setAttribute('aria-pressed', 'true');
                 pinBtn.classList.add('active');
             }
-            textarea.focus();
         })
         .catch(() => {
             showToast('Failed to load note.', 'danger');
