@@ -134,6 +134,11 @@
                                     <i class="bi bi-key-fill"></i> Notes Key
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center gap-2 text-white-50 px-3 py-2" href="/admin/import">
+                                    <i class="bi bi-upload"></i> Import Notes
+                                </a>
+                            </li>
                         </ul>
                         <?php endif; ?>
 

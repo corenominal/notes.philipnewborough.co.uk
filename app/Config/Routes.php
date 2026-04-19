@@ -22,6 +22,8 @@ $routes->delete('/note/(:num)', 'Note::delete/$1');
 // Admin routes
 $routes->get('/admin', 'Admin\Home::index');
 $routes->get('/admin/notes/key', 'Admin\Notes::key');
+$routes->get('/admin/import', 'Admin\Import::index');
+$routes->post('/admin/import', 'Admin\Import::process');
 
 // API routes
 $routes->match(['get', 'options'], '/api/test/ping', 'Api\Test::ping');
