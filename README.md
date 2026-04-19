@@ -11,7 +11,7 @@ Notes are stored as AES-encrypted blobs in a MySQL database. The encryption key 
 - **Create, edit, and delete notes** with a Markdown editor and live preview
 - **Revision history** — a new revision is automatically saved whenever the body of a note changes
 - **Pin notes** for quick access
-- **Search** notes by title
+- **Search** notes by title and body
 - **Paginated note listing** (20 notes per page)
 - **Admin dashboard** showing note and revision counts, recent activity, and encryption key management
 

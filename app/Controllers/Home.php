@@ -47,14 +47,14 @@ class Home extends BaseController
 
         $model = new NoteModel();
         $notes = $model
-            ->select("id, AES_DECRYPT(title, {$escaped}) AS title, pinned, updated_at")
+            ->select("id, AES_DECRYPT(title, {$escaped}) AS title, AES_DECRYPT(body, {$escaped}) AS body, pinned, updated_at")
             ->orderBy('pinned', 'DESC')
             ->orderBy('updated_at', 'DESC')
             ->findAll();
 
         if ($q !== '') {
             $notes = array_values(
-                array_filter($notes, fn($n) => stripos($n['title'] ?? '', $q) !== false)
+                array_filter($notes, fn($n) => stripos($n['title'] ?? '', $q) !== false || stripos($n['body'] ?? '', $q) !== false)
             );
         }
 
@@ -62,6 +62,7 @@ class Home extends BaseController
         $totalPages = max(1, (int) ceil($total / $perPage));
         $page       = min($page, $totalPages);
         $notes      = array_slice($notes, ($page - 1) * $perPage, $perPage);
+        $notes      = array_map(fn($n) => array_diff_key($n, ['body' => '']), $notes);
 
         return $this->response->setJSON([
             'notes'       => $notes,
