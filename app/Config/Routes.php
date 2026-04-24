@@ -14,6 +14,8 @@ $routes->get('/note/(:num)/edit', 'Note::edit/$1');
 $routes->get('/note/(:num)', 'Note::find/$1');
 $routes->get('/note/(:num)/revisions', 'Note::listRevisions/$1');
 $routes->get('/note/(:num)/revision/(:num)', 'Note::findRevision/$1/$2');
+$routes->delete('/note/(:num)/revision/(:num)', 'Note::deleteRevision/$1/$2');
+$routes->delete('/note/(:num)/revisions', 'Note::deleteRevisions/$1');
 $routes->post('/note', 'Note::create');
 $routes->post('/note/preview', 'Note::preview');
 $routes->patch('/note/(:num)', 'Note::update/$1');

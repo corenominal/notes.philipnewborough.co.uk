@@ -269,7 +269,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
 
     if (revisionsTab && revisionsList) {
-        revisionsTab.addEventListener('shown.bs.tab', () => {
+        const deleteModalEl    = document.getElementById('revision-delete-modal');
+        const deleteModalBody  = document.getElementById('revision-delete-modal-body');
+        const confirmDeleteBtn = document.getElementById('btn-confirm-delete-revision');
+        let pendingDeleteIds   = [];
+        let pendingDeleteAll   = false;
+
+        const updateDeleteSelectedBtn = () => {
+            const checked      = revisionsList.querySelectorAll('.revision-checkbox:checked');
+            const deleteSelBtn = document.getElementById('btn-delete-selected');
+            if (deleteSelBtn) deleteSelBtn.disabled = checked.length === 0;
+            const selectAll = document.getElementById('revisions-select-all');
+            const all       = revisionsList.querySelectorAll('.revision-checkbox');
+            if (selectAll && all.length > 0) {
+                selectAll.checked       = checked.length === all.length;
+                selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+            }
+        };
+
+        const loadRevisions = () => {
             revisionsList.innerHTML = '<p class="text-muted fst-italic">Loading revisions&hellip;</p>';
 
             fetch(`/note/${currentId}/revisions`, {
@@ -278,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then((res) => res.json())
             .then((data) => {
                 if (data.error) {
-                    revisionsList.innerHTML = `<p class="text-danger">${data.error}</p>`;
+                    revisionsList.innerHTML = `<p class="text-danger">${escHtml(data.error)}</p>`;
                     return;
                 }
                 if (!data.length) {
@@ -286,64 +304,183 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                const toolbar = `<div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="revisions-select-all">
+                        <label class="form-check-label" for="revisions-select-all">Select all</label>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="btn-delete-selected" disabled>Delete selected</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-auto" id="btn-delete-all-revisions">Delete all</button>
+                </div>`;
+
                 const items = data.map((rev) => {
-                    const date = new Date(rev.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
-                    const title = rev.title || 'Untitled Note';
-                    return `<div class="d-flex align-items-center justify-content-between gap-3 py-2 border-bottom">
-                        <div>
-                            <span class="fw-medium">${title}</span>
-                            <span class="text-secondary small ms-2">${date}</span>
+                    const date     = new Date(rev.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+                    const title    = escHtml(rev.title || 'Untitled Note');
+                    const safeDate = escHtml(date);
+                    return `<div class="d-flex align-items-center gap-3 py-2 border-bottom">
+                        <div class="form-check mb-0 flex-shrink-0">
+                            <input class="form-check-input revision-checkbox" type="checkbox" value="${rev.id}" id="rev-check-${rev.id}" aria-label="Select revision from ${safeDate}">
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary flex-shrink-0" data-revision-id="${rev.id}" aria-label="View revision from ${date}">View</button>
+                        <div class="flex-grow-1">
+                            <span class="fw-medium">${title}</span>
+                            <span class="text-secondary small ms-2">${safeDate}</span>
+                        </div>
+                        <div class="d-flex gap-2 flex-shrink-0">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-revision-id="${rev.id}" aria-label="View revision from ${safeDate}">View</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-delete-revision-id="${rev.id}" aria-label="Delete revision from ${safeDate}">Delete</button>
+                        </div>
                     </div>`;
                 }).join('');
 
-                revisionsList.innerHTML = items;
+                revisionsList.innerHTML = toolbar + items;
             })
             .catch(() => {
                 revisionsList.innerHTML = '<p class="text-danger">Failed to load revisions.</p>';
             });
+        };
+
+        revisionsTab.addEventListener('shown.bs.tab', loadRevisions);
+
+        revisionsList.addEventListener('change', (e) => {
+            if (e.target.id === 'revisions-select-all') {
+                revisionsList.querySelectorAll('.revision-checkbox').forEach((cb) => {
+                    cb.checked = e.target.checked;
+                });
+            }
+            updateDeleteSelectedBtn();
         });
 
         revisionsList.addEventListener('click', (e) => {
-                    const btn = e.target.closest('[data-revision-id]');
-                    if (!btn) return;
+            // Delete single revision
+            const deleteBtn = e.target.closest('[data-delete-revision-id]');
+            if (deleteBtn) {
+                pendingDeleteIds = [deleteBtn.dataset.deleteRevisionId];
+                pendingDeleteAll = false;
+                deleteModalBody.textContent = 'Are you sure you want to delete this revision? This cannot be undone.';
+                bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+                return;
+            }
 
-                    const revId = btn.dataset.revisionId;
-                    btn.disabled = true;
-                    btn.textContent = '…';
+            // Delete selected revisions
+            if (e.target.closest('#btn-delete-selected')) {
+                const checked    = revisionsList.querySelectorAll('.revision-checkbox:checked');
+                pendingDeleteIds = Array.from(checked).map((cb) => cb.value);
+                pendingDeleteAll = false;
+                const n = pendingDeleteIds.length;
+                deleteModalBody.textContent = `Are you sure you want to delete ${n} selected revision${n !== 1 ? 's' : ''}? This cannot be undone.`;
+                bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+                return;
+            }
 
-                    fetch(`/note/${currentId}/revision/${revId}`, {
+            // Delete all revisions
+            if (e.target.closest('#btn-delete-all-revisions')) {
+                const total  = revisionsList.querySelectorAll('.revision-checkbox').length;
+                pendingDeleteIds = [];
+                pendingDeleteAll = true;
+                deleteModalBody.textContent = `Are you sure you want to delete all ${total} revision${total !== 1 ? 's' : ''}? This cannot be undone.`;
+                bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+                return;
+            }
+
+            // View revision
+            const viewBtn = e.target.closest('[data-revision-id]');
+            if (!viewBtn) return;
+
+            const revId = viewBtn.dataset.revisionId;
+            viewBtn.disabled = true;
+            viewBtn.textContent = '…';
+
+            fetch(`/note/${currentId}/revision/${revId}`, {
+                headers: { notekey },
+            })
+            .then((res) => res.json())
+            .then((rev) => {
+                if (rev.error) {
+                    showToast(rev.error, 'danger');
+                    return;
+                }
+                const date = new Date(rev.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+                document.getElementById('revision-modal-date').textContent = date;
+                document.getElementById('revision-modal-body').value = rev.body || '';
+                document.getElementById('btn-restore-revision').dataset.body = rev.body || '';
+
+                const diffContainer = document.getElementById('revision-modal-diff');
+                if (diffContainer) {
+                    const diff = computeDiff(rev.body || '', textarea.value);
+                    diffContainer.innerHTML = renderDiff(diff);
+                }
+
+                bootstrap.Tab.getOrCreateInstance(document.getElementById('revision-tab-text')).show();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('revision-modal')).show();
+            })
+            .catch(() => {
+                showToast('Failed to load revision.', 'danger');
+            })
+            .finally(() => {
+                viewBtn.disabled = false;
+                viewBtn.textContent = 'View';
+            });
+        });
+
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', () => {
+                const bsModal = bootstrap.Modal.getInstance(deleteModalEl);
+                if (bsModal) bsModal.hide();
+                confirmDeleteBtn.disabled = true;
+
+                const done = (msg) => {
+                    confirmDeleteBtn.disabled = false;
+                    pendingDeleteIds = [];
+                    pendingDeleteAll = false;
+                    loadRevisions();
+                    showToast(msg);
+                };
+
+                const fail = (msg) => {
+                    confirmDeleteBtn.disabled = false;
+                    showToast(msg, 'danger');
+                };
+
+                if (pendingDeleteAll) {
+                    fetch(`/note/${currentId}/revisions`, {
+                        method: 'DELETE',
                         headers: { notekey },
                     })
                     .then((res) => res.json())
-                    .then((rev) => {
-                        if (rev.error) {
-                            showToast(rev.error, 'danger');
-                            return;
-                        }
-                        const date = new Date(rev.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
-                        document.getElementById('revision-modal-date').textContent = date;
-                        document.getElementById('revision-modal-body').value = rev.body || '';
-                        document.getElementById('btn-restore-revision').dataset.body = rev.body || '';
-
-                        const diffContainer = document.getElementById('revision-modal-diff');
-                        if (diffContainer) {
-                            const diff = computeDiff(rev.body || '', textarea.value);
-                            diffContainer.innerHTML = renderDiff(diff);
-                        }
-
-                        bootstrap.Tab.getOrCreateInstance(document.getElementById('revision-tab-text')).show();
-                        bootstrap.Modal.getOrCreateInstance(document.getElementById('revision-modal')).show();
+                    .then((data) => {
+                        if (data.error) { fail(data.error); return; }
+                        done('All revisions deleted.');
                     })
-                    .catch(() => {
-                        showToast('Failed to load revision.', 'danger');
+                    .catch(() => fail('Failed to delete revisions.'));
+                } else if (pendingDeleteIds.length === 1) {
+                    fetch(`/note/${currentId}/revision/${pendingDeleteIds[0]}`, {
+                        method: 'DELETE',
+                        headers: { notekey },
                     })
-                    .finally(() => {
-                        btn.disabled = false;
-                        btn.textContent = 'View';
-                    });
-                });
+                    .then((res) => res.json())
+                    .then((data) => {
+                        if (data.error) { fail(data.error); return; }
+                        done('Revision deleted.');
+                    })
+                    .catch(() => fail('Failed to delete revision.'));
+                } else {
+                    fetch(`/note/${currentId}/revisions`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            notekey,
+                        },
+                        body: JSON.stringify({ ids: pendingDeleteIds }),
+                    })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        if (data.error) { fail(data.error); return; }
+                        done(`${pendingDeleteIds.length} revisions deleted.`);
+                    })
+                    .catch(() => fail('Failed to delete revisions.'));
+                }
+            });
+        }
 
         const restoreBtn = document.getElementById('btn-restore-revision');
         if (restoreBtn) {

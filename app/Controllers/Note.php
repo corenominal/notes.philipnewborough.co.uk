@@ -206,6 +206,68 @@ class Note extends BaseController
     }
 
     /**
+     * Delete a single revision belonging to a note.
+     */
+    public function deleteRevision(int $id, int $rid): ResponseInterface
+    {
+        $notekey = $this->getNotekey();
+        if ($notekey === '') {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'Note key not provided.']);
+        }
+
+        $model = new NoteModel();
+        $note  = $model->select('note_id')->find($id);
+
+        if (! $note) {
+            return $this->response->setStatusCode(404)->setJSON(['error' => 'Note not found.']);
+        }
+
+        $revisionModel = new NoteRevisionModel();
+        $revision      = $revisionModel->where('note_id', $note['note_id'])->find($rid);
+
+        if (! $revision) {
+            return $this->response->setStatusCode(404)->setJSON(['error' => 'Revision not found.']);
+        }
+
+        $revisionModel->delete($rid);
+
+        return $this->response->setJSON(['status' => 'success', 'deleted' => $rid]);
+    }
+
+    /**
+     * Delete revisions for a note.
+     * Pass {"ids": [...]} to delete specific revisions, or omit the body to delete all.
+     */
+    public function deleteRevisions(int $id): ResponseInterface
+    {
+        $notekey = $this->getNotekey();
+        if ($notekey === '') {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'Note key not provided.']);
+        }
+
+        $model = new NoteModel();
+        $note  = $model->select('note_id')->find($id);
+
+        if (! $note) {
+            return $this->response->setStatusCode(404)->setJSON(['error' => 'Note not found.']);
+        }
+
+        $data          = $this->request->getJSON(true) ?? [];
+        $revisionModel = new NoteRevisionModel();
+
+        if (array_key_exists('ids', $data)) {
+            $ids = array_filter(array_map('intval', (array) $data['ids']));
+            if (! empty($ids)) {
+                $revisionModel->where('note_id', $note['note_id'])->whereIn('id', $ids)->delete();
+            }
+        } else {
+            $revisionModel->where('note_id', $note['note_id'])->delete();
+        }
+
+        return $this->response->setJSON(['status' => 'success']);
+    }
+
+    /**
      * Delete a note by ID.
      */
     public function delete(int $id): ResponseInterface

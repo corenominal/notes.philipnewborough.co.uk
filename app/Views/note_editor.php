@@ -314,6 +314,25 @@ user@example.com becomes a mailto link.</code></pre>
     </div>
 </div>
 <?php endif; ?>
+<?php if (isset($note_id) && $note_id): ?>
+<div class="modal fade" id="revision-delete-modal" tabindex="-1" aria-labelledby="revision-delete-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="revision-delete-modal-label">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="revision-delete-modal-body">
+                Are you sure you want to delete this revision?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-delete-revision">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div id="editor-toast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
